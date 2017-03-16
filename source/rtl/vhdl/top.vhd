@@ -23,6 +23,8 @@ entity top is
   port (
     clk_i          : in  std_logic;
     reset_n_i      : in  std_logic;
+	 direct_mode_i  : in  std_logic;
+	 display_mode_i : in  std_logic_vector(1 downto 0);
     -- vga
     vga_hsync_o    : out std_logic;
     vga_vsync_o    : out std_logic;
@@ -168,8 +170,8 @@ begin
   graphics_lenght <= conv_std_logic_vector(MEM_SIZE*8*8, GRAPH_MEM_ADDR_WIDTH);
   
   -- removed to inputs pin
-  direct_mode <= '1';
-  display_mode     <= "10";  -- 01 - text mode, 10 - graphics mode, 11 - text & graphics
+  direct_mode <= direct_mode_i;
+  display_mode     <= display_mode(1 downto 0);  -- 01 - text mode, 10 - graphics mode, 11 - text & graphics
   
   font_size        <= x"1";
   show_frame       <= '1';
@@ -250,6 +252,14 @@ begin
   --dir_red
   --dir_green
   --dir_blue
+  dir_red <="11111111" when (dir_pixel_column<V_RES/4 or (dir_pixel_column<3*V_RES/4  and dir_pixel_column>=V_RES/2))  else
+				"00000000" when ((dir_pixel_column<V_RES/2 and dir_pixel_column>=V_RES/4) or dir_pixel_column>=V_RES/4*3);
+  
+  dir_green <="11111111" when dir_pixel_column<V_RES/2 else
+				"00000000" when dir_pixel_column>=V_RES/2;
+  
+  dir_blue <="11111111" when (dir_pixel_column<V_RES/8 or (dir_pixel_column<V_RES/8*3 and dir_pixel_column>=V_RES/4) or (dir_pixel_column<V_RES/8*5 and dir_pixel_column>=V_RES/2) or (dir_pixel_column<V_RES/8*7 and dir_pixel_column>=V_RES/4*3)) else
+				"00000000" when ((dir_pixel_column<V_RES/4 and dir_pixel_column>=V_RES/8) or (dir_pixel_column<V_RES/2 and dir_pixel_column>=V_RES/8*3) or (dir_pixel_column<V_RES/4*3 and dir_pixel_column>=V_RES/8*5) or (dir_pixel_column<V_RES and dir_pixel_column>=V_RES/8*7));
  
   -- koristeci signale realizovati logiku koja pise po TXT_MEM
   --char_address
