@@ -158,6 +158,8 @@ architecture rtl of top is
   signal dir_blue            : std_logic_vector(7 downto 0);
   signal dir_pixel_column    : std_logic_vector(10 downto 0);
   signal dir_pixel_row       : std_logic_vector(10 downto 0);
+  
+  signal counter : std_logic_vector(13 downto 0);
 
 begin
 
@@ -171,7 +173,7 @@ begin
   
   -- removed to inputs pin
   direct_mode <= direct_mode_i;
-  display_mode     <= display_mode(1 downto 0);  -- 01 - text mode, 10 - graphics mode, 11 - text & graphics
+  display_mode     <= display_mode_i;  -- 01 - text mode, 10 - graphics mode, 11 - text & graphics
   
   font_size        <= x"1";
   show_frame       <= '1';
@@ -252,24 +254,77 @@ begin
   --dir_red
   --dir_green
   --dir_blue
-  dir_red <="11111111" when (dir_pixel_column<V_RES/4 or (dir_pixel_column<3*V_RES/4  and dir_pixel_column>=V_RES/2))  else
-				"00000000" when ((dir_pixel_column<V_RES/2 and dir_pixel_column>=V_RES/4) or dir_pixel_column>=V_RES/4*3);
+  dir_red <="11111111" when (dir_pixel_column<H_RES/4 or (dir_pixel_column<3*H_RES/4  and dir_pixel_column>=H_RES/2))  else
+				"00000000" when ((dir_pixel_column<H_RES/2 and dir_pixel_column>=H_RES/4) or dir_pixel_column>=H_RES/4*3);
   
-  dir_green <="11111111" when dir_pixel_column<V_RES/2 else
-				"00000000" when dir_pixel_column>=V_RES/2;
+  dir_green <="11111111" when dir_pixel_column<H_RES/2 else
+				"00000000" when dir_pixel_column>=H_RES/2;
   
-  dir_blue <="11111111" when (dir_pixel_column<V_RES/8 or (dir_pixel_column<V_RES/8*3 and dir_pixel_column>=V_RES/4) or (dir_pixel_column<V_RES/8*5 and dir_pixel_column>=V_RES/2) or (dir_pixel_column<V_RES/8*7 and dir_pixel_column>=V_RES/4*3)) else
-				"00000000" when ((dir_pixel_column<V_RES/4 and dir_pixel_column>=V_RES/8) or (dir_pixel_column<V_RES/2 and dir_pixel_column>=V_RES/8*3) or (dir_pixel_column<V_RES/4*3 and dir_pixel_column>=V_RES/8*5) or (dir_pixel_column<V_RES and dir_pixel_column>=V_RES/8*7));
+  dir_blue <="11111111" when (dir_pixel_column<H_RES/8 or (dir_pixel_column<H_RES/8*3 and dir_pixel_column>=H_RES/4) or (dir_pixel_column<H_RES/8*5 and dir_pixel_column>=H_RES/2) or (dir_pixel_column<H_RES/8*7 and dir_pixel_column>=H_RES/4*3)) else
+				"00000000" when ((dir_pixel_column<H_RES/4 and dir_pixel_column>=H_RES/8) or (dir_pixel_column<H_RES/2 and dir_pixel_column>=H_RES/8*3) or (dir_pixel_column<H_RES/4*3 and dir_pixel_column>=H_RES/8*5) or (dir_pixel_column<H_RES and dir_pixel_column>=H_RES/8*7));
  
   -- koristeci signale realizovati logiku koja pise po TXT_MEM
   --char_address
   --char_value
   --char_we
+  char_we<='1';
   
+  process(pix_clock_s)
+  begin
+	if (vga_rst_n_s='0') then
+		counter<=(others =>'0');
+	elsif rising_edge(pix_clock_s) then
+		if(counter=4800-1) then
+			counter<=(others => '0');
+		else
+			counter<=counter+1;
+		end if;
+	end if;	
+  end process;
+  
+  char_address<=counter;
+  
+  process(counter)
+  begin
+	if (counter=610) then	
+		char_value<="001111";
+	elsif (counter=611) then
+		char_value<="010000";
+	elsif (counter=612) then
+		char_value<="000001";
+	elsif (counter=613) then
+		char_value<="100001";
+	else
+		char_value<="100000";
+	end if;
+  end process;
   -- koristeci signale realizovati logiku koja pise po GRAPH_MEM
   --pixel_address
   --pixel_value
   --pixel_we
+  pixel_we<='1';
+  foreground_color<=x"FFFFFF";
+  background_color<=x"000000";
   
+  process(pix_clock_s)
+  begin
+	if(vga_rst_n_s='0') then
+	 pixel_address<=(others => '0');
+	elsif rising_edge(pix_clock_s) then
+		if(pixel_address=9599) then
+			pixel_address<=(others => '0');
+		else
+			pixel_address<=pixel_address+1;
+		end if;
+	end if;
+  end process;
   
+  process(pixel_address)
+  begin
+	if (pixel_address>=4005 and pixel_address<4015) then
+		pixel_value<=x"FF000000";
+	else
+		pixel_value<=x"00000000";
+	end if;
+  end process;
 end rtl;
