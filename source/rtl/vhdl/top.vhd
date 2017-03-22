@@ -158,8 +158,6 @@ architecture rtl of top is
   signal dir_blue            : std_logic_vector(7 downto 0);
   signal dir_pixel_column    : std_logic_vector(10 downto 0);
   signal dir_pixel_row       : std_logic_vector(10 downto 0);
-  
-  signal counter : std_logic_vector(13 downto 0);
 
 begin
 
@@ -176,9 +174,9 @@ begin
   display_mode     <= display_mode_i;  -- 01 - text mode, 10 - graphics mode, 11 - text & graphics
   
   font_size        <= x"1";
-  show_frame       <= '1';
-  foreground_color <= x"FFFFFF";
-  background_color <= x"000000";
+  show_frame       <= '0';
+  foreground_color <= x"FFFF00";
+  background_color <= x"FFFFFF";
   frame_color      <= x"FF0000";
 
   clk5m_inst : ODDR2
@@ -272,39 +270,36 @@ begin
   process(pix_clock_s)
   begin
 	if (vga_rst_n_s='0') then
-		counter<=(others =>'0');
+		char_address<=(others =>'0');
 	elsif rising_edge(pix_clock_s) then
-		if(counter=4800-1) then
-			counter<=(others => '0');
+		if(char_address=4800-1) then
+			char_address<=(others => '0');
 		else
-			counter<=counter+1;
+			char_address<=char_address+1;
 		end if;
 	end if;	
   end process;
   
-  char_address<=counter;
-  
   process(counter)
   begin
-	if (counter=610) then	
+	if (counter=614) then	
 		char_value<="001111";
-	elsif (counter=611) then
+	elsif (counter=615) then
 		char_value<="010000";
-	elsif (counter=612) then
+	elsif (counter=616) then
 		char_value<="000001";
-	elsif (counter=613) then
+	elsif (counter=617) then
 		char_value<="100001";
 	else
 		char_value<="100000";
 	end if;
   end process;
+  
   -- koristeci signale realizovati logiku koja pise po GRAPH_MEM
   --pixel_address
   --pixel_value
   --pixel_we
   pixel_we<='1';
-  foreground_color<=x"FFFFFF";
-  background_color<=x"000000";
   
   process(pix_clock_s)
   begin
@@ -321,8 +316,8 @@ begin
   
   process(pixel_address)
   begin
-	if (pixel_address>=4005 and pixel_address<4015) then
-		pixel_value<=x"FF000000";
+	if (pixel_address=4005 or pixel_address=4025 or pixel_address=4045 or pixel_address=4065) then
+		pixel_value<=x"F0000000";
 	else
 		pixel_value<=x"00000000";
 	end if;
