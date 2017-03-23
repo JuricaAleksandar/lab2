@@ -159,6 +159,7 @@ architecture rtl of top is
   signal dir_pixel_column    : std_logic_vector(10 downto 0);
   signal dir_pixel_row       : std_logic_vector(10 downto 0);
 
+  signal counter : std_logic_vector(31 downto 0);
 begin
 
   -- calculate message lenght from font size
@@ -267,28 +268,34 @@ begin
   --char_we
   char_we<='1';
   
-  process(pix_clock_s)
+  process(pix_clock_s,vga_rst_n_s)
   begin
 	if (vga_rst_n_s='0') then
 		char_address<=(others =>'0');
+		counter<=x"00000078";--120
 	elsif rising_edge(pix_clock_s) then
-		if(char_address=4800-1) then
+		if(char_address=4799) then
 			char_address<=(others => '0');
+			if (counter=157) then
+				counter<=x"00000078";--120
+			else
+				counter<=counter+1;
+			end if;
 		else
 			char_address<=char_address+1;
 		end if;
 	end if;	
   end process;
   
-  process(counter)
+  process(char_address,counter)
   begin
-	if (counter=614) then	
+	if (char_address=counter) then	
 		char_value<="001111";
-	elsif (counter=615) then
+	elsif (char_address=counter+1) then
 		char_value<="010000";
-	elsif (counter=616) then
+	elsif (char_address=counter+2) then
 		char_value<="000001";
-	elsif (counter=617) then
+	elsif (char_address=counter+3) then
 		char_value<="100001";
 	else
 		char_value<="100000";
@@ -301,7 +308,7 @@ begin
   --pixel_we
   pixel_we<='1';
   
-  process(pix_clock_s)
+  process(pix_clock_s,vga_rst_n_s)
   begin
 	if(vga_rst_n_s='0') then
 	 pixel_address<=(others => '0');
