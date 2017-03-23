@@ -1,8 +1,8 @@
 INTSTYLE=ise
-INFILE=/home/aleksandar/LPRS2/lab2/synthesis/lab2/top.ncd
-OUTFILE=/home/aleksandar/LPRS2/lab2/synthesis/lab2/top.bit
+INFILE=C:\materija\New folder (2)\lab2\synthesis\lab2\top.ncd
+OUTFILE=C:\materija\New folder (2)\lab2\synthesis\lab2\top.bit
 FAMILY=Spartan6
 PART=xc6slx45-2fgg676
-WORKINGDIR=/home/aleksandar/LPRS2/lab2/synthesis/lab2
-LICENSE=WebPack
-USER_INFO=211324885_0_0_178
+WORKINGDIR=C:\materija\New folder (2)\lab2\synthesis\lab2
+LICENSE=ISE
+USER_INFO=209858334_178080923_210593072_268

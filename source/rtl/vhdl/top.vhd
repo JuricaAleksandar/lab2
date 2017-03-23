@@ -160,6 +160,9 @@ architecture rtl of top is
   signal dir_pixel_row       : std_logic_vector(10 downto 0);
 
   signal counter : std_logic_vector(31 downto 0);
+  signal counter_pom : std_logic_vector(23 downto 0);
+  signal value : std_logic_vector(31 downto 0);
+  signal address : std_logic_vector(31 downto 0);
 begin
 
   -- calculate message lenght from font size
@@ -177,7 +180,7 @@ begin
   font_size        <= x"1";
   show_frame       <= '0';
   foreground_color <= x"FFFF00";
-  background_color <= x"FFFFFF";
+  background_color <= x"000000";
   frame_color      <= x"FF0000";
 
   clk5m_inst : ODDR2
@@ -272,19 +275,42 @@ begin
   begin
 	if (vga_rst_n_s='0') then
 		char_address<=(others =>'0');
-		counter<=x"00000078";--120
 	elsif rising_edge(pix_clock_s) then
 		if(char_address=4799) then
 			char_address<=(others => '0');
-			if (counter=157) then
-				counter<=x"00000078";--120
-			else
-				counter<=counter+1;
-			end if;
 		else
 			char_address<=char_address+1;
 		end if;
 	end if;	
+  end process;
+  
+  process(pix_clock_s,vga_rst_n_s)
+  begin
+	if (vga_rst_n_s='0') then
+		counter<=x"00000078";--120
+		counter_pom<=(others => '0');
+		value<=x"FF000000";
+		address<=x"00000000";
+	elsif rising_edge(pix_clock_s) then
+		if (counter_pom=10000000) then
+			if (counter=156) then
+					counter<=x"00000078";--120
+				else
+					counter<=counter+1;
+			end if;
+			counter_pom<=(others => '0');
+			value<=value(23 downto 0) & value(31 downto 24);
+			if (value(31 downto 24)=x"FF") then
+				if(address=19) then
+					address<=(others => '0');
+				else
+					address<=address+1;
+				end if;
+			end if;
+		else
+			counter_pom<=counter_pom+1;
+		end if;
+	end if;
   end process;
   
   process(char_address,counter)
@@ -323,8 +349,8 @@ begin
   
   process(pixel_address)
   begin
-	if (pixel_address=4005 or pixel_address=4025 or pixel_address=4045 or pixel_address=4065) then
-		pixel_value<=x"F0000000";
+	if (pixel_address=4000+address or pixel_address=4020+address or pixel_address=4040+address or pixel_address=4060+address or pixel_address=4080+address or pixel_address=4100+address or pixel_address=4120+address or pixel_address=4140+address) then
+		pixel_value<=value;
 	else
 		pixel_value<=x"00000000";
 	end if;
